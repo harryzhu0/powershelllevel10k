@@ -1,0 +1,10 @@
+Does this look like a lock?
+
+     
+
+[y] Yes, it does look like a lock
+[n] No, it doesn't look like a lock
+
+[q] Abort configuration
+
+Please state choice [ynq]

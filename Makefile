@@ -1,30 +1,24 @@
-CC      := gcc
-CFLAGS  := -Wall -Wextra -O2
+CC = gcc
+CFLAGS = -O2
 
-# Your program name
-TARGET  := pwsh10k
+# Directories
+WIN_DIR = windows
+LIN_DIR  = linux
 
-# All .c files in the current directory
-SRCS := $(wildcard *.c)
-OBJS := $(SRCS:.c=.o)
+# Targets
+WIN_BIN = windows.exe
+LIN_BIN  = linux.exe
 
-# Default rule
-all: $(TARGET)
+all: $(WIN_BIN) $(LIN_BIN)
 
-# Link step
-$(TARGET): $(OBJS)
-	$(CC) $(SRC) $(OBJS) -o $@
+$(WIN_BIN): $(WIN_DIR)/main.c
+	$(CC) $(CFLAGS) $< -o $@
 
-# Compile step
-%.o: %.c
-	$(CC) $(SRC) $(CFLAGS) -c $< -o $@
+$(LIN_BIN): $(LIN_DIR)/main.c
+	$(CC) $(CFLAGS) $< -o $@
 
-# Cleanup
 clean:
-	rm -f $(OBJS)
-
-print:
-	@echo SRCS=$(SRCS)
-	@echo OBJS=$(OBJS)
+	rm -f */*.o
+	rm -f $(WIN_BIN) $(LIN_BIN)
 
 .PHONY: all clean
