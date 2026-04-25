@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <locale.h>
 #include <unistd.h>
 
 int installnf(const char *font) {
@@ -37,9 +38,9 @@ int installnf(const char *font) {
     return 0;
 }
 
+// recursive make directory
 int rmkdir(const char *dir) {
     char tmp[256];
-    char path[256] = "";
     char *p = NULL;
 
     snprintf(tmp, sizeof(tmp), "%s", dir);
@@ -65,11 +66,17 @@ int menu_select(const char *title, const char *subtitle,
         mvprintw(2, 2, "----------------------------------------");
         mvprintw(4, 2, "%s", subtitle);
 
-        for (int i = 0; i < count; i++) {
-            if (i == highlight) attron(A_REVERSE);
-            mvprintw(7 + i, 4, "%s", items[i]);
-            if (i == highlight) attroff(A_REVERSE);
+        int i = 0;
+
+        for (i = 0; i < count; i++) {
+            if (i == highlight) {
+                mvprintw(8 + i, 2, "> %s", items[i]);
+            } else {
+                mvprintw(8 + i, 2, "  %s", items[i]);
+            }
         }
+
+        mvprintw(8 + i, sizeof(items[i]) + 2, "\n  ");
 
         ch = getch();
         switch (ch) {
@@ -116,7 +123,7 @@ int install_wizard() {
 
     int s1 = menu_select(
         "[ Step 1 / 3 ] Nerd Font Detection",
-        "Does this look like a diamond?\n\n                    ◆",
+        "Does this look like a diamond?\n\n                --> ◆ <--",
         step1_items, 3
     );
 
@@ -167,6 +174,8 @@ int install_wizard() {
 }
 
 int main() {
+    setlocale(LC_ALL, "");
+
     initscr();
     noecho();
     keypad(stdscr, TRUE);

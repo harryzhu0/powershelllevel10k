@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -lncurses
+CFLAGS = -O2 -lncursesw -Wall -Wextra
 
 # Directories
 WIN_DIR = windows
