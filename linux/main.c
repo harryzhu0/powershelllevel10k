@@ -59,16 +59,16 @@ int rmkdir(const char *dir) {
     return mkdir(tmp, 0755);
 }
 
-int menu_select(const char *title, const char *subtitle,
+int menu_select(const char *subtitle,
                 const char *items[], int count, int oline) {
     int highlight = 0;
     int ch;
 
     while (1) {
         clear();
-        mvprintw(1, 2, "%s", title);
+        mvfprint(stdscr, 1, 2, "\033[34;1mPowerShell\033[96mLevel\033[2m10K\033[0;22m Installer");
         mvprintw(2, 2, "----------------------------------------");
-        mvprintw(4, 2, "%s", subtitle);
+        mvfprint(stdscr, 4, 2, subtitle);
 
         int i = 0;
 
@@ -76,7 +76,7 @@ int menu_select(const char *title, const char *subtitle,
 
         for (i = 0; i < count; i++) {
             if (i == highlight) {
-                snprintf(buf, sizeof(buf), "> %s", items[i]);
+                snprintf(buf, sizeof(buf), "\033[1m> %s\033[22m", items[i]);
                 mvfprint(stdscr, oline + i, 0, buf);
             } else {
                 mvfprint(stdscr, oline + i, 2, items[i]);
@@ -111,7 +111,7 @@ void nf_install_process() {
     };
 
     int s2 = menu_select(
-        "PowerShell10K Installer",
+        
         "Install Nerd Font?",
         step2_items, 2, 6
     );
@@ -128,7 +128,6 @@ void nf_install_process() {
         };
 
         int i1 = menu_select(
-            "PowerShell10K Installer",
             "Please choose a font",
             inst_items, 7, 6
         );
@@ -138,7 +137,7 @@ void nf_install_process() {
         const char *warn_items[] = { "Yes", "No" };
 
         int i2 = menu_select(
-            "PowerShell10K installer",
+            
             "Warning: PowerShellLevel10K may not work well without nerd fonts.\nContinue installation?",
             warn_items, 2, 7
         );
@@ -177,8 +176,8 @@ int install_wizard() {
     };
 
     int s1 = menu_select(
-        "PowerShell10K Installer",
-        "Does this look like a diamond?\n\n                --> ◆ <--",
+        
+        "Does this look like a diamond?\n\n                --> \033[35m◆\033[0m <--",
         step1_items, 3, 8
     );
 
@@ -196,8 +195,8 @@ int install_wizard() {
     };
 
     int s3 = menu_select(
-        "PowerShell10K Installer",
-        "Does this look like a lock?\n\n                -->  <--",
+        
+        "Does this look like a lock?\n\n                --> \033[36m\033[0m <--",
         step3_items, 4, 8
     );
 
@@ -212,8 +211,8 @@ int install_wizard() {
     };
 
     int s4 = menu_select(
-        "PowerShell10K Installer",
-        "Do the columns line up?\n\n  wwwwwwww\n  ||||||||",
+        
+        "Do the columns line up?\n\n  \033[32mwwwwwwww\n  ||||||||\033[0m",
         step4_items, 4, 9
     );
 
@@ -225,7 +224,7 @@ int install_wizard() {
         };
 
         int w = menu_select(
-            "PowerShell10K Installer",
+            
             "Monospace fonts are required for pwsh10k to work properly.",
             warning, 1, 6
         );
@@ -241,8 +240,7 @@ int install_wizard() {
     };
 
     int s5 = menu_select(
-        "PowerShell10K Installer",
-        "Do the icons fit between the crosses\n\n            --->  XXXXXXXXX  <---?",
+        "Do the icons fit between the crosses\n\n            --->  X\033[31m\033[0mX\033[32m\033[0mX\033[33m\033[0mX\033[34m\033[0mX\033[35m\033[0mX\033[36m\033[0mX\033[37m\033[0mX\033[2;35m\033[0;22mX  <---?",
         step5_items, 4, 8
     );
 
@@ -250,17 +248,51 @@ int install_wizard() {
     if (s5 == 3) return quit();
 
     const char* step6_items[] = {
-        "Lean        \033[1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m ",
-        "Classic     \033[48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m                                    \033[38;5;8;48;5;48m ✔ \033[38;5;81m\033[48;5;81m 12:53:39 \033[0m",
+        "Lean        \033[22;0;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m ",
+        "Classic     \033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m                                    \033[38;5;8;48;5;48m ✔ \033[38;5;81m\033[48;5;81m 12:53:39 \033[0m",
         "Restart",
         "Abort"
     };
 
     int s6 = menu_select(
-        "PowerShellLevel10K Installer",
         "Pick a theme.",
         step6_items, 4, 6
     );
+
+    if (s6 == 0) {
+        const char* step_6a_items[] = {
+            "Unicode        \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m",
+            "Ascii          \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m>",
+            "Restart",      
+            "Abort"
+        };
+
+        int s6a = menu_select(
+            "Character Set",
+            step_6a_items, 4, 6
+        );
+
+        if (s6a == 2) return install_wizard();
+        if (s6a == 3) return quit();
+
+        if (s6a == 0) {
+            int ucode = 1;
+            const char* step_6a2_items = {
+                "256-colour     \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m",
+                "8-colour       \033[22;36m~\033[22m/src\033[22m\033[32m main \033[33m!3 \033[34m?2 \033[0m",
+                "Restart",
+                "Abort"
+            };
+
+            int s6a2 = menu_select(
+                "Colours",
+                step_6a2_items, 4, 6
+            );
+        }
+        if (s6a == 1) {
+            int ucode = 0;
+        }
+    }
 
     clear();
     mvprintw(2, 2, "Writing configuration to PowerShell profile...");
