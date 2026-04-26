@@ -1,20 +1,14 @@
 #include <ncurses.h>
 #include <ctype.h>
+#include "render.h"
 
-#define MAX_PAIRS 256
+PairEntry pair_cache[MAX_PAIRS];
+int pair_count = 0;
+short current_fg = -1;
+short current_bg = -1;
+attr_t current_attrs = A_NORMAL;
+short current_pair_id = 0;
 
-typedef struct {
-    short fg, bg;
-    short id;
-} PairEntry;
-
-static PairEntry pair_cache[MAX_PAIRS];
-static int pair_count = 0;
-
-static short current_fg = -1;
-static short current_bg = -1;
-static attr_t current_attrs = A_NORMAL;
-static short current_pair_id = 0;
 
 static short map_ansi_8color_fg(int code) {
     // 30–37, 90–97
@@ -28,7 +22,8 @@ static short map_ansi_8color_bg(int code) {
     if (code >= 40 && code <= 47) return code - 40;
     if (code >= 100 && code <= 107) return code - 100;
     return -1;
-}
+}  // or i could add 10 to the fg
+
 
 static short get_pair_id(short fg, short bg) {
     // reuse if exists
@@ -161,28 +156,4 @@ void mvfprint(WINDOW *win, int y, int x, const char *str) {
             waddch(win, (unsigned char)*str++);
         }
     }
-}
-
-int main() {
-    initscr();
-    noecho();
-    raw();
-
-    start_color();
-    use_default_colors();
-
-    // optional: pre-warm one pair so cache[0] is valid fallback
-    init_pair(1, COLOR_WHITE, -1);
-    pair_cache[0].fg = COLOR_WHITE;
-    pair_cache[0].bg = -1;
-    pair_cache[0].id = 1;
-    pair_count = 1;
-
-    mvfprint(stdscr, 1, 2, "\033[31mRed\033[0m default\n");
-    mvfprint(stdscr, 3, 2,
-        "\033[1;38;5;81;48;5;48m fancy 256-color \033[0m test\n");
-
-    getch();
-    endwin();
-    return 0;
 }

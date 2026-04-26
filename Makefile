@@ -21,7 +21,7 @@ $(WIN_BIN): $(WIN_SRC)
 	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
 
 $(LIN_BIN): $(LIN_SRC)
-	$(CC) $(CFLAGS) $(LIN_DIR)/pwsh10k.c $< -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LIN_DIR)/*.c -o $@ $(LDFLAGS)
 
 clean:
 	rm -f $(WIN_BIN) $(LIN_BIN)

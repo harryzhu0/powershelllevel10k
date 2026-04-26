@@ -6,22 +6,8 @@
 #include <locale.h>
 #include <unistd.h>
 
-void format(const char *str) {
-    while (*str) {
-        if (*str == '\033' && *(str+1) == '[') {
-            str += 2; // Skip ESC[
-            int code = atoi(str);
-            while (*str && *str != 'm') str++;
-            if (*str == 'm') str++;
-
-            // Map ANSI color codes to ncurses
-            if (code == 31) { attron(COLOR_PAIR(31)); }
-            else if (code == 0) { attroff(COLOR_PAIR(1)); }
-        } else {
-            addch(*str++);
-        }
-    }
-}
+#include "pwsh10k.h"
+#include "render.h"
 
 void write_pwsh10k_prompt(FILE *pf);
 
@@ -86,13 +72,17 @@ int menu_select(const char *title, const char *subtitle,
 
         int i = 0;
 
+        char buf[512];
+
         for (i = 0; i < count; i++) {
             if (i == highlight) {
-                mvprintw(oline + i, 2, "> %s", items[i]);
+                snprintf(buf, sizeof(buf), "> %s", items[i]);
+                mvfprint(stdscr, oline + i, 0, buf);
             } else {
-                mvprintw(oline + i, 2, "  %s", items[i]);
+                mvfprint(stdscr, oline + i, 2, items[i]);
             }
         }
+
 
         ch = getch();
         switch (ch) {
@@ -295,10 +285,15 @@ int main() {
     raw();
     keypad(stdscr, TRUE);
 
-    if (has_colors()) {
-        start_color();
-        use_default_colors();
-    }
+    start_color();
+    use_default_colors();
+
+    // warm up pair 1 so cache[0] is valid
+    init_pair(1, COLOR_WHITE, -1);
+    pair_cache[0].fg = COLOR_WHITE;
+    pair_cache[0].bg = -1;
+    pair_cache[0].id = 1;
+    pair_count = 1;
 
     install_wizard();
 
