@@ -6,6 +6,25 @@
 #include <locale.h>
 #include <unistd.h>
 
+void format(const char *str) {
+    while (*str) {
+        if (*str == '\033' && *(str+1) == '[') {
+            str += 2; // Skip ESC[
+            int code = atoi(str);
+            while (*str && *str != 'm') str++;
+            if (*str == 'm') str++;
+
+            // Map ANSI color codes to ncurses
+            if (code == 31) { attron(COLOR_PAIR(31)); }
+            else if (code == 0) { attroff(COLOR_PAIR(1)); }
+        } else {
+            addch(*str++);
+        }
+    }
+}
+
+void write_pwsh10k_prompt(FILE *pf);
+
 int installnf(const char *font) {
     char font_url[512];
     snprintf(font_url, sizeof(font_url),
@@ -38,7 +57,6 @@ int installnf(const char *font) {
     return 0;
 }
 
-// recursive make directory
 int rmkdir(const char *dir) {
     char tmp[256];
     char *p = NULL;
@@ -56,43 +74,6 @@ int rmkdir(const char *dir) {
 }
 
 int menu_select(const char *title, const char *subtitle,
-                const char *items[], int count) {
-    int highlight = 0;
-    int ch;
-
-    while (1) {
-        clear();
-        mvprintw(1, 2, "%s", title);
-        mvprintw(2, 2, "----------------------------------------");
-        mvprintw(4, 2, "%s", subtitle);
-
-        int i = 0;
-
-        for (i = 0; i < count; i++) {
-            if (i == highlight) {
-                mvprintw(8 + i, 2, "> %s", items[i]);
-            } else {
-                mvprintw(8 + i, 2, "  %s", items[i]);
-            }
-        }
-
-        mvprintw(8 + i, sizeof(items[i]) + 2, "\n  ");
-
-        ch = getch();
-        switch (ch) {
-            case KEY_UP:
-                highlight = (highlight == 0) ? count - 1 : highlight - 1;
-                break;
-            case KEY_DOWN:
-                highlight = (highlight == count - 1) ? 0 : highlight + 1;
-                break;
-            case '\n':
-                return highlight;
-        }
-    }
-}
-
-int menu_select_c(const char *title, const char *subtitle,
                 const char *items[], int count, int oline) {
     int highlight = 0;
     int ch;
@@ -113,8 +94,6 @@ int menu_select_c(const char *title, const char *subtitle,
             }
         }
 
-        mvprintw(oline + i, sizeof(items[i]) + 2, "\n  ");
-
         ch = getch();
         switch (ch) {
             case KEY_UP:
@@ -129,15 +108,56 @@ int menu_select_c(const char *title, const char *subtitle,
     }
 }
 
-// Quit function because why not
-
 int quit() {
     printf("Configuration aborted, no changes written to Powershell profile.\n");
     printf("Run \033[36mpwsh10k\033[0m to run the installer again\n");
     return 0;
 }
 
-// Install wizard
+void nf_install_process() {
+    const char *step2_items[] = {
+        "Yes, install Nerd Font",
+        "No, skip installation"
+    };
+
+    int s2 = menu_select(
+        "PowerShell10K Installer",
+        "Install Nerd Font?",
+        step2_items, 2, 6
+    );
+
+    if (s2 == 0) {
+        const char *inst_items[] = {
+            "JetBrainsMono",
+            "FiraCode",
+            "Hack",
+            "Meslo",
+            "GeistMono",
+            "Noto",
+            "ZedMono"
+        };
+
+        int i1 = menu_select(
+            "PowerShell10K Installer",
+            "Please choose a font",
+            inst_items, 7, 6
+        );
+
+        installnf(inst_items[i1]);
+    } else {
+        const char *warn_items[] = { "Yes", "No" };
+
+        int i2 = menu_select(
+            "PowerShell10K installer",
+            "Warning: PowerShellLevel10K may not work well without nerd fonts.\nContinue installation?",
+            warn_items, 2, 7
+        );
+
+        if (i2 == 1) quit();
+    }
+}
+
+
 int install_wizard() {
     FILE *fp;
 
@@ -169,55 +189,13 @@ int install_wizard() {
     int s1 = menu_select(
         "PowerShell10K Installer",
         "Does this look like a diamond?\n\n                --> ◆ <--",
-        step1_items, 3
+        step1_items, 3, 8
     );
 
     if (s1 == 2) return quit();
 
     if (s1 == 1) {
-        /* Install Nerd Font */
-        const char *step2_items[] = {
-            "Yes, install Nerd Font",
-            "No, skip installation"
-        };
-
-        int s2 = menu_select_c(
-            "PowerShell10K Installer",
-            "Install Nerd Font?",
-            step2_items, 2, 6
-        );
-
-        if (s2 == 0) {
-            const char *inst_items[] = {
-                "JetBrainsMono",
-                "FiraCode",
-                "Hack",
-                "Meslo",
-                "GeistMono",
-                "Noto",
-                "ZedMono"
-            };
-
-            int i1 = menu_select_c(
-                "PowerShell10K Installer",
-                "Please choose a font",
-                inst_items, 7, 6
-            );
-
-            installnf(inst_items[i1]);
-        } else {
-            const char *warn_items[] = { "Yes", "No" };
-
-            int i2 = menu_select_c(
-                "PowerShell10K installer",
-                "Warning: PowerShellLevel10K may not work well without nerd fonts.\nContinue installation?",
-                warn_items, 2, 7
-            );
-
-            if (i2 == 2) {
-                return quit();
-            }
-        }
+        nf_install_process();
     }
 
     const char *step3_items[] = {
@@ -230,78 +208,74 @@ int install_wizard() {
     int s3 = menu_select(
         "PowerShell10K Installer",
         "Does this look like a lock?\n\n                -->  <--",
-        step3_items, 4
+        step3_items, 4, 8
     );
-
 
     if (s3 == 3) return quit();
     if (s3 == 2) return install_wizard();
 
-    clear();
-    mvprintw(2, 2, "Writing configuration to PowerShell profile...");
-   
-   
-    const char *ps1         = "";
-    const char *bg = "\x1b[48;5;8m";
-    const char *fg = "\x1b[38;5;8m";
-    const char *hi = "\x1b[96m";
-    const char *grey = "\x1b[90m";
-    const char *reset = "\x1b[0m";
+    const char *step4_items[] = {
+        "Yes, the columns line up",
+        "No, the columns do not line up",
+        "Restart",
+        "Abort"
+    };
 
-    fprintf(pf,
-    "function prompt {\n"
-    "    $p = (Get-Location).Path.Replace($HOME,'~')\n"
-    "    $parts = $p -split '[\\\\/]' | Where-Object { $_ -ne '' }\n"
-    "\n"
-    "    if ($p.Length -lt 30) {\n"
-    "        $colored = for ($i=0; $i -lt $parts.Count; $i++) {\n"
-    "            $seg = $parts[$i]\n"
-    "            if ($i -eq 0 -or $i -eq $parts.Count - 1) {\n"
-    "                \"%s%s$seg%s\"\n"   // bg + highlight + reset
-    "            } else {\n"
-    "                \"%s$seg%s\"\n"     // bg + reset
-    "            }\n"
-    "        }\n"
-    "        $pathString = $colored -join '%s/%s'\n" // bg + reset
-    "        return \"%s $pathString%s %s%s%s%s \"\n"   // glyph color + glyph + reset
-    "    }\n"
-    "\n"
-    "    $colored = for ($i=0; $i -lt $parts.Count; $i++) {\n"
-    "        $seg = $parts[$i]\n"
-    "\n"
-    "        if ($i -eq 0) {\n"
-    "            \"%s%s$seg%s\"\n"   // bg + highlight + reset
-    "        }\n"
-    "        elseif ($i -eq $parts.Count - 1) {\n"
-    "            \"%s%s$seg%s\"\n"   // bg + highlight + reset
-    "        }\n"
-    "        elseif ($i -eq 1 -and $parts[0] -eq '~') {\n"
-    "            \"%s%s$($seg.Substring(0,[Math]::Min(3,$seg.Length)))%s\"\n" // bg + grey + reset
-    "        }\n"
-    "        else {\n"
-    "            \"%s%s$($seg[0])%s\"\n" // bg + grey + reset
-    "        }\n"
-    "    }\n"
-    "\n"
-    "    $pathString = $colored -join '%s/%s'\n" // bg + reset
-    "    return \"%s $pathString%s %s%s%s%s \"\n"   // glyph color + glyph + reset
-    "}\n"
-    ,
-    
-    bg, hi, reset,
-    bg, reset,
-    bg, reset,
-    bg, bg, reset, fg, ps1, reset,
-
-    bg, hi, reset,
-    bg, hi, reset,
-    bg, grey, reset,
-    bg, grey, reset,
-
-    bg, reset,
-    bg, bg, reset, fg, ps1, reset
+    int s4 = menu_select(
+        "PowerShell10K Installer",
+        "Do the columns line up?\n\n  wwwwwwww\n  ||||||||",
+        step4_items, 4, 9
     );
 
+    if (s4 == 3) return quit();
+    if (s4 == 2) return install_wizard();
+    if (s4 == 1) {
+        const char *warning[] = {
+            "OK"
+        };
+
+        int w = menu_select(
+            "PowerShell10K Installer",
+            "Monospace fonts are required for pwsh10k to work properly.",
+            warning, 1, 6
+        );
+
+        nf_install_process();
+    }
+
+    const char* step5_items[] = {
+        "Yes, the icons are very close to the crosses but there is no overlap.",
+        "No, some icons overlap neighbouring crosses.",
+        "Restart",
+        "Abort"
+    };
+
+    int s5 = menu_select(
+        "PowerShell10K Installer",
+        "Do the icons fit between the crosses\n\n            --->  XXXXXXXXX  <---?",
+        step5_items, 4, 8
+    );
+
+    if (s5 == 2) return install_wizard();
+    if (s5 == 3) return quit();
+
+    const char* step6_items[] = {
+        "Lean        \033[1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m ",
+        "Classic     \033[48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m                                    \033[38;5;8;48;5;48m ✔ \033[38;5;81m\033[48;5;81m 12:53:39 \033[0m",
+        "Restart",
+        "Abort"
+    };
+
+    int s6 = menu_select(
+        "PowerShellLevel10K Installer",
+        "Pick a theme.",
+        step6_items, 4, 6
+    );
+
+    clear();
+    mvprintw(2, 2, "Writing configuration to PowerShell profile...");
+
+    write_pwsh10k_prompt(pf);
 
     fclose(pf);
 
@@ -313,14 +287,22 @@ int install_wizard() {
 }
 
 int main() {
+    printf("\033[?25l");
     setlocale(LC_ALL, "");
 
     initscr();
     noecho();
+    raw();
     keypad(stdscr, TRUE);
+
+    if (has_colors()) {
+        start_color();
+        use_default_colors();
+    }
 
     install_wizard();
 
     endwin();
+    printf("\033[?25h");
     return 0;
 }
