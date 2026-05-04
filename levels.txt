@@ -1,64 +1,28 @@
-Does this look like a diamond?
-reference https://graphemica.com/%E2%97%86
+start:
+    var foo = "NULL"
 
-                --> ◆ <-- 
+    """
+    Select a prompt
 
-[y] Yes, it does look like a diamond
-[n] No, it doesn't look like a diamond
+    (lean)
+    (classic)
+    """
+    (lean)    -> lean_charset
+    (classic) -> quit
 
-[q] Abort configuration
+lean_charset:
+    var foo = "bar"
 
-Please state choice [ynq]: 
+    """
+    Character Set
 
+    (unicode)
+    (ascii)
+    """
+    (unicode) -> quit
+    (ascii)   -> quit
 
-Does this look like a lock?
-reference https://fontawesome.com/icons/lock
-
-                -->  <-- 
-
-[y] Yes, it does look like a lock
-[n] No, it doesn't look like a lock
-
-[q] Abort configuration
-
-Please state choice [ynq]: 
-
-
-Does this look like a downward arrow?
-reference https://graphemica.com/%F0%9F%A1%87
-
-                --> 🡇 <--
-
-[y] Yes, it does look like a downward arrow
-[n] No, it doesn't look like a downward arrow 
-
-[q] Abort configuration
-[r] Restart from the beginning
-
-Please state choice [ynrq]
-
-
-Do the icons touch the X's?
-
-    XXX󰉋XX
-
-[y] Yes, they touch the X's
-[n] No, they come very close but don't touch
-
-[r] Reset configuration and start over
-[q] Abort configuration
-
-Please state choice [ynrq]: 
-
-
-Which number is the downwards arrow pointing to?
-
-    🡆 🡆 🡆 🡇  
-        1 2 3 4 5
-
-[n] Not pointing to a number
-
-[r] Reset configuration and start over
-[q] Abort configuration
-
-Please state choice [1234nrq]: 
+quit:
+    """
+    Done.
+    """

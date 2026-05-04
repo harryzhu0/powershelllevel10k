@@ -9,6 +9,9 @@
 #include "pwsh10k.h"
 #include "render.h"
 
+#define GRAYSCALE 1
+#define RAINBOW 2
+
 void write_pwsh10k_prompt(FILE *pf);
 
 int installnf(const char *font) {
@@ -148,6 +151,10 @@ void nf_install_process() {
 
 
 int install_wizard() {
+    int colours = 0;
+    int ucode = 0;
+    int style = 0;
+
     FILE *fp;
 
     fp = popen("pwsh -noprofile -command 'echo $PROFILE'", "r");
@@ -275,23 +282,107 @@ int install_wizard() {
         if (s6a == 2) return install_wizard();
         if (s6a == 3) return quit();
 
-        if (s6a == 0) {
-            int ucode = 1;
-            const char* step_6a2_items = {
-                "256-colour     \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m",
-                "8-colour       \033[22;36m~\033[22m/src\033[22m\033[32m main \033[33m!3 \033[34m?2 \033[0m",
-                "Restart",
-                "Abort"
-            };
+        if (s6a == 0) ucode = 1;
+        if (s6a == 1) ucode = 0;
 
-            int s6a2 = menu_select(
-                "Colours",
-                step_6a2_items, 4, 6
-            );
+        const char* step_6a2_items[] = {
+            "256-colour     \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m ",
+            "8-colour       \033[22;36m~\033[22m/src\033[22m\033[32m main \033[33m!3 \033[34m?2 \033[0m",
+            "Restart",
+            "Abort"
+        };
+
+        int s6a2 = menu_select(
+            "Colours",
+            step_6a2_items, 4, 6
+        );
+
+        if (s6a2 == 2) return install_wizard();
+        if (s6a2 == 3) return quit();
+
+        const char** ptr;
+
+        const char* step_7a_items[] = {
+            "12-Hour        \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m                             \033[2m5s 12:24:32 PM\033[22m",
+            "24-Hour        \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m                                \033[2m5s 12:24:32\033[22m",
+            "No time        \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m                                        \033[2m5s \033[22m",
+            "Restart",
+            "Abort"
+        };
+
+        const char* step_7b_items[] = {
+            "12-Hour        \033[22;36m~\033[22m/src\033[22m\033[32m main \033[33m!3 \033[34m?2 \033[0m                             5s 12:24:32 PM",
+            "24-Hour        \033[22;36m~\033[22m/src\033[22m\033[32m main \033[33m!3 \033[34m?2 \033[0m                                5s 12:24:32",
+            "No time        \033[22;36m~\033[22m/src\033[22m\033[32m main \033[33m!3 \033[34m?2 \033[0m                                         5s",
+            "Restart",
+            "Abort"
+        };
+        
+        if (s6a2 == 0) {
+            colours = 256;
+            ptr = step_7a_items;
+        } 
+
+        if (s6a2 == 1) {
+            colours = 8;
+            ptr = step_7b_items;
         }
-        if (s6a == 1) {
-            int ucode = 0;
-        }
+
+        int s6a2a = menu_select(
+            "Time",
+            ptr, 5, 6
+        );
+    }
+
+    if (s6 == 1) {
+        const char* step_6b1_items[] = {
+            "Rainbow        \033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m                                    \033[38;5;8;48;5;48m ✔ \033[38;5;81m\033[48;5;81m 12:53:39 \033[0m",
+            "Grayscale      \033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m                                    \033[38;5;8;48;5;48m ✔ \033[38;5;81m\033[48;5;81m 12:53:39 \033[0m",
+            "Restart",
+            "Abort"
+        };
+
+        int s6b1 = menu_select(
+            "Pick a style",
+            step_6b1_items, 4, 6
+        );
+
+        if (s6b1 == 2) return install_wizard();
+        if (s6b1 == 3) return quit();
+
+        if (s6b1 == 1) style = GRAYSCALE;
+        if (s6b1 == 0) style = RAINBOW;
+
+        const char* step_6b1a1_items[] = {
+            "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
+            "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
+            "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
+            "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
+            "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
+            "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
+            "Restart",
+            "Abort"
+        };
+
+        int s6b1a1 = menu_select(
+            "Pick a prompt",
+            step_6b1a1_items, 8, 6
+        );
+
+        const char* step_6b1a2_items[] = {
+            "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
+            "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
+            "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
+            "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
+            "Restart",
+            "Abort"
+        };
+
+        int s6b1a2 = menu_select(
+            "Pick a colour scheme",
+            step_6b1a2_items, 6, 6
+        );
+
     }
 
     clear();
