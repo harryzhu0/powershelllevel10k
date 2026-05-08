@@ -8,6 +8,7 @@
 
 #include "pwsh10k.h"
 #include "render.h"
+#include "parse.h"
 
 #define GRAYSCALE 1
 #define RAINBOW 2
@@ -149,7 +150,17 @@ void nf_install_process() {
     }
 }
 
+int install_wizard() {
+    Return raw = parse("../instructions.txt");
+    if (raw.errcode != 0) {
+        const char *parse_error[] = {"Abort"};
+        const char *msg = raw.err ? raw.err : "Unknown parse error";
+        menu_select(msg, parse_error, 1, 6);
+        return 1;
+    }
 
+}
+/*
 int install_wizard() {
     int colours = 0;
     int ucode = 0;
@@ -398,6 +409,8 @@ int install_wizard() {
 
     return 0;
 }
+
+*/
 
 int main() {
     printf("\033[?25l");

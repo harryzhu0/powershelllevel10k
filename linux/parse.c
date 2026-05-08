@@ -26,8 +26,13 @@ typedef struct {
 
     Variable *vars;
     int nvars;
-} Program;
+} Program; // Literally the world in your hands
 
+typedef struct {
+    int errcode; // if this is 0 then that means that the program ran successfully, probably because you have to set it yourself
+    char *err;
+    Program prog;
+} Return;
 
 static char *strdup_safe(const char *s) {
     if (!s) return NULL;
@@ -90,16 +95,14 @@ enum State {
     STATE_AFTER_BLOCK
 };
 
-int main(int argc, char **argv) {
-    if (argc < 2) {
-        fprintf(stderr, "usage: %s file.[there is no 'mandatory' file extension just put something or nothing if you want to]\n", argv[0]);
-        return 1;
-    }
+Return parse(char *file) {
+    Return ret = {0};
 
-    FILE *f = fopen(argv[1], "r");
+    FILE *f = fopen(file, "r");
     if (!f) {
         perror("fopen");
-        return 1;
+        ret.errcode = 1;
+        return ret;
     }
 
     Program prog = {0};
@@ -122,8 +125,9 @@ int main(int argc, char **argv) {
             char *eq = strchr(p, '=');
 
             if (!eq) {
-                fprintf(stderr, "Parse error: '=' expected in declaration");
-                return 1;
+                ret.err = "Parse error: '=' expected in declaration";
+                ret.errcode = 1;
+                return ret;
             }
 
             *eq = '\0';
@@ -159,8 +163,9 @@ int main(int argc, char **argv) {
         if (state == STATE_EXPECT_LABEL) {
             char *colon = strchr(t, ':');
             if (!colon) {
-                fprintf(stderr, "Parse error: expected label at line: %s\n", t);
-                return 1;
+                ret.err = "Parse error: expected label";
+                ret.errcode = 1;
+                return ret;
             }
 
             *colon = '\0';
@@ -171,8 +176,9 @@ int main(int argc, char **argv) {
 
         if (state == STATE_EXPECT_BLOCK_START) {
             if (strcmp(t, "\"\"\"") != 0) {
-                fprintf(stderr, "Parse error: expected \"\"\" after label %s\n", current.name);
-                return 1;
+                ret.err = "Parse error: expected \"\"\" after label";
+                ret.errcode = 1;
+                return ret;
             }
             
             free(block_buf);
@@ -231,8 +237,9 @@ int main(int argc, char **argv) {
             char *arrow = strstr(t, "->");
 
             if (!lp || !rp || !arrow || rp < lp || arrow < rp) {
-                fprintf(stderr, "Parse error: expected choice or label at line: %s\n", t);
-                return 1;
+                ret.err = "Parse error: expected choice or label";
+                ret.errcode = 1;
+                return ret;
             }
 
             *rp = '\0';
@@ -252,48 +259,6 @@ int main(int argc, char **argv) {
     fclose(f);
     free(block_buf);
 
-    printf("Parsed %d steps:\n\n", prog.nsteps);
-    for (int i = 0; i < prog.nsteps; i++) {
-        Step *s = &prog.steps[i];
-
-        printf("Step %d: %s\n", i, s->name);
-        printf("Text:\n%s\n", s->text ? s->text : "(null)");
-        printf("Choices (%d):\n", s->nchoices);
-
-        for (int j = 0; j < s->nchoices; j++) {
-            printf("  (%s) \t--> %s\n", s->choices[j].label, s->choices[j].target);
-        }
-
-        printf("Variables (%d):\n", prog.nvars);
-        for (int i = 0; i < prog.nvars; i++) {
-            printf("  %s = %s\n", prog.vars[i].name, prog.vars[i].value);
-        }
-
-        printf("\n");
-    }
-
-    for (int i = 0; i < prog.nsteps; i++) {
-        Step *s = &prog.steps[i];
-
-        free(s->name);
-        free(s->text);
-
-        for (int j = 0; j < s->nchoices; j++) {
-            free(s->choices[j].label);
-            free(s->choices[j].target);
-        }
-
-        free(s->choices);
-    }
-
-    for (int i = 0; i < prog.nvars; i++) {
-        free(prog.vars[i].name);
-        free(prog.vars[i].value);
-    }
-    free(prog.vars);
-
-    free(prog.steps);
-
-
-    return 0;
+    ret.prog = prog;
+    return ret;
 }
