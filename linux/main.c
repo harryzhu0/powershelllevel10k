@@ -1,7 +1,6 @@
 #include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <locale.h>
 #include <unistd.h>
@@ -14,6 +13,27 @@
 #define RAINBOW 2
 
 void write_pwsh10k_prompt(FILE *pf);
+
+static const char **choice_labels(Step *s) {
+    const char **arr = malloc(sizeof(char*) * s->nchoices);
+    for (int i = 0; i < s->nchoices; i++) {
+        arr[i] = s->choices[i].label;   // use the label as the menu text
+    }
+    return arr;
+}
+
+
+int lines(const char *str) {
+    int count = 0;
+    if (str == NULL) return 0; // S*fety check
+
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] == '\n') {
+            count++;
+        }
+    }
+    return count;
+}
 
 int installnf(const char *font) {
     char font_url[512];
@@ -63,8 +83,7 @@ int rmkdir(const char *dir) {
     return mkdir(tmp, 0755);
 }
 
-int menu_select(const char *subtitle,
-                const char *items[], int count, int oline) {
+int menu_select(const char *subtitle, const char *items[], int count, int lines) {
     int highlight = 0;
     int ch;
 
@@ -81,9 +100,9 @@ int menu_select(const char *subtitle,
         for (i = 0; i < count; i++) {
             if (i == highlight) {
                 snprintf(buf, sizeof(buf), "\033[1m> %s\033[22m", items[i]);
-                mvfprint(stdscr, oline + i, 0, buf);
+                mvfprint(stdscr, lines + i + 5, 0, buf);
             } else {
-                mvfprint(stdscr, oline + i, 2, items[i]);
+                mvfprint(stdscr, lines + i + 5, 2, items[i]);
             }
         }
 
@@ -115,7 +134,7 @@ void nf_install_process() {
     };
 
     int s2 = menu_select(
-        
+
         "Install Nerd Font?",
         step2_items, 2, 6
     );
@@ -141,7 +160,6 @@ void nf_install_process() {
         const char *warn_items[] = { "Yes", "No" };
 
         int i2 = menu_select(
-            
             "Warning: PowerShellLevel10K may not work well without nerd fonts.\nContinue installation?",
             warn_items, 2, 7
         );
@@ -151,7 +169,7 @@ void nf_install_process() {
 }
 
 int install_wizard() {
-    Return raw = parse("../instructions.txt");
+    Return raw = parse();
     if (raw.errcode != 0) {
         const char *parse_error[] = {"Abort"};
         const char *msg = raw.err ? raw.err : "Unknown parse error";
@@ -159,6 +177,24 @@ int install_wizard() {
         return 1;
     }
 
+    Program *p = &raw.prog;
+
+    for (int i = 0; i < p->nsteps; i++) {
+        Step *s = &p->steps[i];
+
+        const char **labels = choice_labels(s);
+
+        menu_select(
+            s->name,
+            labels,
+            s->nchoices,
+            lines(s->text) + 1
+        );
+
+        free(labels);
+    }
+
+    return 0;
 }
 /*
 int install_wizard() {
@@ -194,7 +230,7 @@ int install_wizard() {
     };
 
     int s1 = menu_select(
-        
+
         "Does this look like a diamond?\n\n                --> \033[35m◆\033[0m <--",
         step1_items, 3, 8
     );
@@ -213,7 +249,7 @@ int install_wizard() {
     };
 
     int s3 = menu_select(
-        
+
         "Does this look like a lock?\n\n                --> \033[36m\033[0m <--",
         step3_items, 4, 8
     );
@@ -229,7 +265,7 @@ int install_wizard() {
     };
 
     int s4 = menu_select(
-        
+
         "Do the columns line up?\n\n  \033[32mwwwwwwww\n  ||||||||\033[0m",
         step4_items, 4, 9
     );
@@ -242,7 +278,7 @@ int install_wizard() {
         };
 
         int w = menu_select(
-            
+
             "Monospace fonts are required for pwsh10k to work properly.",
             warning, 1, 6
         );
@@ -281,7 +317,7 @@ int install_wizard() {
         const char* step_6a_items[] = {
             "Unicode        \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m",
             "Ascii          \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m>",
-            "Restart",      
+            "Restart",
             "Abort"
         };
 
@@ -328,11 +364,11 @@ int install_wizard() {
             "Restart",
             "Abort"
         };
-        
+
         if (s6a2 == 0) {
             colours = 256;
             ptr = step_7a_items;
-        } 
+        }
 
         if (s6a2 == 1) {
             colours = 8;
@@ -409,7 +445,6 @@ int install_wizard() {
 
     return 0;
 }
-
 */
 
 int main() {
@@ -432,7 +467,6 @@ int main() {
     pair_count = 1;
 
     install_wizard();
-
     endwin();
     printf("\033[?25h");
     return 0;

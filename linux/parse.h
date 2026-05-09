@@ -37,6 +37,6 @@ typedef struct {
     char *err;
 } Return;
 
-Return parse(char *file);
+Return parse();
 
 #endif

@@ -14,19 +14,20 @@ typedef struct {
 } Choice;
 
 typedef struct {
+    int    lines;     
+    char   *text; 
     char   *name;      
-    char   *text;      
     Choice *choices;   
     int     nchoices;
 } Step;
 
 typedef struct {
     Step *steps;
-    int   nsteps;
+    int   nsteps; 
 
     Variable *vars;
     int nvars;
-} Program; // Literally the world in your hands
+} Program; 
 
 typedef struct {
     int errcode; // if this is 0 then that means that the program ran successfully, probably because you have to set it yourself
@@ -95,10 +96,10 @@ enum State {
     STATE_AFTER_BLOCK
 };
 
-Return parse(char *file) {
+Return parse() {
     Return ret = {0};
 
-    FILE *f = fopen(file, "r");
+    FILE *f = fopen("inst.txt", "r");
     if (!f) {
         perror("fopen");
         ret.errcode = 1;
