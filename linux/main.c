@@ -4,24 +4,17 @@
 #include <sys/stat.h>
 #include <locale.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "pwsh10k.h"
 #include "render.h"
-#include "parse.h"
 
 #define GRAYSCALE 1
 #define RAINBOW 2
 
 void write_pwsh10k_prompt(FILE *pf);
-
-static const char **choice_labels(Step *s) {
-    const char **arr = malloc(sizeof(char*) * s->nchoices);
-    for (int i = 0; i < s->nchoices; i++) {
-        arr[i] = s->choices[i].label;   // use the label as the menu text
-    }
-    return arr;
-}
-
+int menu_select(const char *subtitle, const char *items[], int count, int lines);
+int quit();
 
 int lines(const char *str) {
     int count = 0;
@@ -35,11 +28,165 @@ int lines(const char *str) {
     return count;
 }
 
-int installnf(const char *font) {
+int installnf() {
+    const char* page1_items[] = {
+        "0xProto",
+        "3270",
+        "Adwaita Mono",
+        "Agave",
+        "Anonymous Pro",
+        "Arimo",
+        "Atkinson Hyperlegible Mono",
+        "Aurulent Sans Mono",
+        "BigBlue Terminal",
+        "Bitstream Vera Sans Mono",
+        "Cascadia Code",
+        "Cascadia Mono",
+        "Code New Roman",
+        "Comic Shanns Mono",
+        "Commit Mono",
+        "Forward (Page 1 of 5)",
+        "Back",
+        "quit"
+    };
+
+    const char* page2_items[] = {
+        "Cousine",
+        "D2Coding",
+        "DaddyTime Mono",
+        "DejaVu Sans Mono",
+        "Departure Mono",
+        "Droid Sans Mono",
+        "Envy Code R",
+        "Fantasque Sans Mono",
+        "Fira Code",
+        "Fira Mono",
+        "Font Patcher",
+        "Geist Mono",
+        "Go Mono",
+        "Gohu",
+        "Hack",
+        "Forward (Page 2 of 5)",
+        "Back",
+        "quit"
+    };
+
+    const char* page3_items[] = {
+        "Hasklig",
+        "Heavy Data",
+        "Hermit",
+        "iA Writer",
+        "IBM Plex Mono",
+        "Inconsolata",
+        "Inconsolata Go",
+        "Inconsolata LGC",
+        "Intel One Mono",
+        "Iosevka",
+        "Iosevka Term",
+        "Iosevka Term Slab",
+        "JetBrains Mono",
+        "Lekton",
+        "Liberation Mono",
+        "Forward (Page 3 of 5)",
+        "Back",
+        "quit"
+    };
+
+    const char* page4_items[] = {
+        "Lilex",
+        "Martian Mono",
+        "Meslo",
+        "Monaspace",
+        "Monofur",
+        "Monoid",
+        "Mononoki",
+        "MPlus",
+        "Nerd Fonts Symbols Only",
+        "Noto",
+        "OpenDyslexic",
+        "Overpass",
+        "ProFont",
+        "ProggyClean",
+        "Recursive",
+        "Forward (Page 4 of 5)",
+        "Back",
+        "quit"
+    };
+
+    const char* page5_items[]= {
+        "Roboto Mono",
+        "Share Tech Mono",
+        "Source Code Pro",
+        "Space Mono",
+        "Terminus",
+        "Tinos",
+        "Ubuntu",
+        "Ubuntu Mono",
+        "Ubuntu Sans",
+        "Victor Mono",
+        "Zed Mono",
+        "Forward (Page 5 of 5)",
+        "Back",
+        "quit"
+    };
+
+    int page = 1;
+    char* target;
+
+    while (1) {
+        switch (page) {
+                int res = menu_select(
+                    "Select a font to install",
+                    page1_items, 18, 8
+                );
+                if (res == 17) {return quit();}
+                else if (res == 16) {page = 5;}
+                else if (res == 15) {page++;}
+                else {target = (char*)page1_items[res];}
+            } else if (page == 2) {
+                int res = menu_select(
+                    "Select a font to install",
+                    page2_items, 18, 8
+                );
+                if (res == 17) {return quit();}
+                else if (res == 16) {page--;}
+                else if (res == 15) {page++;}
+                else {target = (char*)page2_items[res];}
+            } else if (page == 3) {
+                int res = menu_select(
+                    "Select a font to install",
+                    page3_items, 18, 8
+                );
+                if (res == 17) {quit();}
+                else if (res == 16) {page--;}
+                else if (res == 15) {page++;}
+                else {target = (char*)page3_items[res];}
+            } else if (page == 4) {
+                int res = menu_select(
+                    "Select a font to install",
+                    page4_items, 18, 8
+                );
+                if (res == 17) {retur quit();}
+                else if (res == 16) {page = 5;}
+                else if (res == 15) {page++;}
+                else {target = (char*)page4_items[res];}
+            5:
+                int res = menu_select(
+                    "Select a font to install",
+                    page5_items, 14, 8
+                );
+                if (res == 17) {return quit();}
+                else if (res == 16) {page--;}
+                else if (res == 15) {page = 1;}
+                else {target = (char*)page5_items[res];
+            }
+        }
+    }
+
     char font_url[512];
     snprintf(font_url, sizeof(font_url),
              "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/%s.zip",
-             font);
+             target);
 
     const char *home = getenv("HOME");
     if (!home) return 1;
@@ -49,7 +196,7 @@ int installnf(const char *font) {
     mkdir(font_dir, 0755);
 
     char zip_path[256];
-    snprintf(zip_path, sizeof(zip_path), "/tmp/%s.zip", font);
+    snprintf(zip_path, sizeof(zip_path), "/tmp/%s.zip", target);
 
     char curl_cmd[1024];
     snprintf(curl_cmd, sizeof(curl_cmd),
@@ -106,6 +253,7 @@ int menu_select(const char *subtitle, const char *items[], int count, int lines)
             }
         }
 
+        refresh();
 
         ch = getch();
         switch (ch) {
@@ -122,82 +270,12 @@ int menu_select(const char *subtitle, const char *items[], int count, int lines)
 }
 
 int quit() {
-    printf("Configuration aborted, no changes written to Powershell profile.\n");
+    printf("Configuration quited, no changes written to Powershell profile.\n");
     printf("Run \033[36mpwsh10k\033[0m to run the installer again\n");
     return 0;
 }
 
-void nf_install_process() {
-    const char *step2_items[] = {
-        "Yes, install Nerd Font",
-        "No, skip installation"
-    };
-
-    int s2 = menu_select(
-
-        "Install Nerd Font?",
-        step2_items, 2, 6
-    );
-
-    if (s2 == 0) {
-        const char *inst_items[] = {
-            "JetBrainsMono",
-            "FiraCode",
-            "Hack",
-            "Meslo",
-            "GeistMono",
-            "Noto",
-            "ZedMono"
-        };
-
-        int i1 = menu_select(
-            "Please choose a font",
-            inst_items, 7, 6
-        );
-
-        installnf(inst_items[i1]);
-    } else {
-        const char *warn_items[] = { "Yes", "No" };
-
-        int i2 = menu_select(
-            "Warning: PowerShellLevel10K may not work well without nerd fonts.\nContinue installation?",
-            warn_items, 2, 7
-        );
-
-        if (i2 == 1) quit();
-    }
-}
-
-int install_wizard() {
-    Return raw = parse();
-    if (raw.errcode != 0) {
-        const char *parse_error[] = {"Abort"};
-        const char *msg = raw.err ? raw.err : "Unknown parse error";
-        menu_select(msg, parse_error, 1, 6);
-        return 1;
-    }
-
-    Program *p = &raw.prog;
-
-    for (int i = 0; i < p->nsteps; i++) {
-        Step *s = &p->steps[i];
-
-        const char **labels = choice_labels(s);
-
-        menu_select(
-            s->name,
-            labels,
-            s->nchoices,
-            lines(s->text) + 1
-        );
-
-        free(labels);
-    }
-
-    return 0;
-}
-/*
-int install_wizard() {
+int install_process() {
     int colours = 0;
     int ucode = 0;
     int style = 0;
@@ -226,11 +304,10 @@ int install_wizard() {
     const char *step1_items[] = {
         "Yes, it looks like a diamond",
         "No, it does not look like a diamond",
-        "Abort"
+        "quit"
     };
 
     int s1 = menu_select(
-
         "Does this look like a diamond?\n\n                --> \033[35m◆\033[0m <--",
         step1_items, 3, 8
     );
@@ -238,14 +315,14 @@ int install_wizard() {
     if (s1 == 2) return quit();
 
     if (s1 == 1) {
-        nf_install_process();
+        installnf();
     }
 
     const char *step3_items[] = {
         "Yes, it looks like a lock",
         "No, it does not look like a lock",
         "Restart",
-        "Abort"
+        "quit"
     };
 
     int s3 = menu_select(
@@ -255,13 +332,13 @@ int install_wizard() {
     );
 
     if (s3 == 3) return quit();
-    if (s3 == 2) return install_wizard();
+    if (s3 == 2) return install_process();
 
     const char *step4_items[] = {
         "Yes, the columns line up",
         "No, the columns do not line up",
         "Restart",
-        "Abort"
+        "quit"
     };
 
     int s4 = menu_select(
@@ -271,7 +348,7 @@ int install_wizard() {
     );
 
     if (s4 == 3) return quit();
-    if (s4 == 2) return install_wizard();
+    if (s4 == 2) return install_process();
     if (s4 == 1) {
         const char *warning[] = {
             "OK"
@@ -283,14 +360,14 @@ int install_wizard() {
             warning, 1, 6
         );
 
-        nf_install_process();
+        installnf();
     }
 
     const char* step5_items[] = {
         "Yes, the icons are very close to the crosses but there is no overlap.",
         "No, some icons overlap neighbouring crosses.",
         "Restart",
-        "Abort"
+        "quit"
     };
 
     int s5 = menu_select(
@@ -298,14 +375,14 @@ int install_wizard() {
         step5_items, 4, 8
     );
 
-    if (s5 == 2) return install_wizard();
+    if (s5 == 2) return install_process();
     if (s5 == 3) return quit();
 
     const char* step6_items[] = {
         "Lean        \033[22;0;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m ",
         "Classic     \033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m                                    \033[38;5;8;48;5;48m ✔ \033[38;5;81m\033[48;5;81m 12:53:39 \033[0m",
         "Restart",
-        "Abort"
+        "quit"
     };
 
     int s6 = menu_select(
@@ -318,7 +395,7 @@ int install_wizard() {
             "Unicode        \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m",
             "Ascii          \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m>",
             "Restart",
-            "Abort"
+            "quit"
         };
 
         int s6a = menu_select(
@@ -326,7 +403,7 @@ int install_wizard() {
             step_6a_items, 4, 6
         );
 
-        if (s6a == 2) return install_wizard();
+        if (s6a == 2) return install_process();
         if (s6a == 3) return quit();
 
         if (s6a == 0) ucode = 1;
@@ -336,7 +413,7 @@ int install_wizard() {
             "256-colour     \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m ",
             "8-colour       \033[22;36m~\033[22m/src\033[22m\033[32m main \033[33m!3 \033[34m?2 \033[0m",
             "Restart",
-            "Abort"
+            "quit"
         };
 
         int s6a2 = menu_select(
@@ -344,7 +421,7 @@ int install_wizard() {
             step_6a2_items, 4, 6
         );
 
-        if (s6a2 == 2) return install_wizard();
+        if (s6a2 == 2) return install_process();
         if (s6a2 == 3) return quit();
 
         const char** ptr;
@@ -354,7 +431,7 @@ int install_wizard() {
             "24-Hour        \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m                                \033[2m5s 12:24:32\033[22m",
             "No time        \033[22;1;36m~\033[22m/\033[1msrc\033[22m\033[32m main \033[38;5;220m!3 \033[96m?2 \033[0m                                        \033[2m5s \033[22m",
             "Restart",
-            "Abort"
+            "quit"
         };
 
         const char* step_7b_items[] = {
@@ -362,7 +439,7 @@ int install_wizard() {
             "24-Hour        \033[22;36m~\033[22m/src\033[22m\033[32m main \033[33m!3 \033[34m?2 \033[0m                                5s 12:24:32",
             "No time        \033[22;36m~\033[22m/src\033[22m\033[32m main \033[33m!3 \033[34m?2 \033[0m                                         5s",
             "Restart",
-            "Abort"
+            "quit"
         };
 
         if (s6a2 == 0) {
@@ -386,7 +463,7 @@ int install_wizard() {
             "Rainbow        \033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m                                    \033[38;5;8;48;5;48m ✔ \033[38;5;81m\033[48;5;81m 12:53:39 \033[0m",
             "Grayscale      \033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m                                    \033[38;5;8;48;5;48m ✔ \033[38;5;81m\033[48;5;81m 12:53:39 \033[0m",
             "Restart",
-            "Abort"
+            "quit"
         };
 
         int s6b1 = menu_select(
@@ -394,7 +471,7 @@ int install_wizard() {
             step_6b1_items, 4, 6
         );
 
-        if (s6b1 == 2) return install_wizard();
+        if (s6b1 == 2) return install_process();
         if (s6b1 == 3) return quit();
 
         if (s6b1 == 1) style = GRAYSCALE;
@@ -408,7 +485,7 @@ int install_wizard() {
             "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
             "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
             "Restart",
-            "Abort"
+            "quit"
         };
 
         int s6b1a1 = menu_select(
@@ -422,7 +499,7 @@ int install_wizard() {
             "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
             "\033[22;0;48;5;81;37m ~\033[2m/\033[22;1msrc \033[22;0m\033[38;5;81m\033[48;5;48m \033[32mmain \033[38;5;220m!3 \033[96m?2 \033[0;38;5;48m",
             "Restart",
-            "Abort"
+            "quit"
         };
 
         int s6b1a2 = menu_select(
@@ -445,7 +522,6 @@ int install_wizard() {
 
     return 0;
 }
-*/
 
 int main() {
     printf("\033[?25l");
@@ -466,7 +542,7 @@ int main() {
     pair_cache[0].id = 1;
     pair_count = 1;
 
-    install_wizard();
+    install_process();
     endwin();
     printf("\033[?25h");
     return 0;

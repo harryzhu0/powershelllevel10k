@@ -62,9 +62,23 @@ static void apply_state(WINDOW *win) {
 }
 
 void mvfprint(WINDOW *win, int y, int x, const char *str) {
+    current_fg = -1;
+    current_bg = -1;
+    current_attrs = A_NORMAL;
+    current_pair_id = 0;
+    apply_state(win);
+
     wmove(win, y, x);
 
     while (*str) {
+        if (*str == '\n') {
+            int cy, cx;
+            getyx(win, cy, cx);
+            wmove(win, cy + 1, 0);
+            str++;
+            continue;
+        }
+
         if (*str == '\033' && *(str + 1) == '[') {
             str += 2; // skip ESC[
 
